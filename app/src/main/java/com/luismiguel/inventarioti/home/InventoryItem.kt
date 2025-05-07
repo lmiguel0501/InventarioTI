@@ -1,9 +1,10 @@
 package com.luismiguel.inventarioti.home
 
-class InventoryItem(
+data class InventoryItem(
     val name: String,
-    val serialNumber: String,
-    val status: String
+    val serialNumber: Int,
+    val status: String,
+    val quantity: Int
 ) {
 
 }

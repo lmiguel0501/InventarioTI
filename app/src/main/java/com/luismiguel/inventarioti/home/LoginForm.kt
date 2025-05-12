@@ -28,22 +28,19 @@ fun LoginForm(navController: NavHostController) {
     val context = LocalContext.current
     val signInClient = GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN)
 
-    val signInLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(Exception::class.java)
-                if (account != null) {
-                    navController.navigate("main") {
-                        popUpTo("login") { inclusive = true }
-                    }
+    val signInLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(Exception::class.java)
+            if (account != null) {
+                navController.navigate("main") {
+                    popUpTo("login") { inclusive = true }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Error al iniciar sesión con Google", Toast.LENGTH_SHORT)
-                    .show()
             }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al iniciar sesión con Google", Toast.LENGTH_SHORT).show()
         }
+    }
 
     Scaffold { padding ->
         Box(
@@ -59,7 +56,6 @@ fun LoginForm(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
                 Text(
                     text = "¡Bienvenido al inventario de soporte técnico!",
                     style = MaterialTheme.typography.headlineSmall,
@@ -97,12 +93,10 @@ fun LoginForm(navController: NavHostController) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Continuar con Google", color = Color.Black)
                 }
-
             }
         }
     }
 }
-
 
 @Composable
 fun CustomTextField(

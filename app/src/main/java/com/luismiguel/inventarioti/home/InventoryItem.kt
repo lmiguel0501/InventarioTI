@@ -5,6 +5,5 @@ data class InventoryItem(
     val serialNumber: Int,
     val status: String,
     val quantity: Int
-) {
+)
 
-}

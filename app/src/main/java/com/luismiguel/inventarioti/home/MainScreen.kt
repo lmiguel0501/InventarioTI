@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -25,15 +26,22 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+enum class MainRoutes {
+    HOME,
+    COMPROBANTES
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun MainScreen(navController: NavHostController) {
+
     var inventory by remember { mutableStateOf(listOf<InventoryItem>()) }
     var showDialog by remember { mutableStateOf(false) }
     var selectedItem by remember { mutableStateOf<InventoryItem?>(null) }
     var isDarkMode by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var quantityToDelete by remember { mutableStateOf(0) }
+    var currentScreen by remember { mutableStateOf(MainRoutes.HOME) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -48,7 +56,7 @@ fun MainScreen(navController: NavHostController) {
     )
 
     LaunchedEffect(Unit) {
-        delay(3000)
+        delay(2000)
         showWelcome = false
     }
 
@@ -85,17 +93,25 @@ fun MainScreen(navController: NavHostController) {
                     )
                     menuOptions.forEach { option ->
                         TextButton(onClick = {
-                            println("Seleccionaste: $option")
+                            currentScreen = MainRoutes.HOME
                             scope.launch { drawerState.close() }
                         }) {
-                            Text(text = option)
+                            Text("Inicio")
+                        }
+                        TextButton(onClick = {
+                            currentScreen = MainRoutes.COMPROBANTES
+                            scope.launch { drawerState.close() }
+                        }) {
+                            Text("Comprobantes de entrega")
                         }
                         TextButton(onClick = {
                             isDarkMode = !isDarkMode
                         }) {
                             Text(text = if (isDarkMode) "Desactivar Modo Oscuro" else "Activar Modo Oscuro")
                         }
+
                     }
+
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = {
                         googleSignInClient.signOut().addOnCompleteListener {
@@ -117,23 +133,32 @@ fun MainScreen(navController: NavHostController) {
         ) {
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(end = 56.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Soporte Técnico")
+                    Column {
+                        TopAppBar(
+                            title = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(end = 56.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        "Soporte Técnico",
+
+                                        )
+                                }
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                    Icon(Icons.Default.Menu, contentDescription = "Menú")
+                                }
                             }
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Menú")
-                            }
-                        }
-                    )
+                        )
+                        Divider(
+                            thickness = 1.dp,
+                            color = Color.Black.copy(alpha = 0.2f)
+                        )
+                    }
                 },
                 floatingActionButton = {
                     FloatingActionButton(onClick = {
@@ -173,26 +198,37 @@ fun MainScreen(navController: NavHostController) {
                         }
                     }
 
-                    if (!showWelcome) {
-                        LazyColumn {
-                            items(inventory) { item ->
-                                InventoryItemCard(
-                                    item = item,
-                                    selected = item == selectedItem,
-                                    onClick = {
-                                        selectedItem = if (selectedItem == item) null else item
-                                    },
-                                    onEdit = {
-                                        selectedItem = item
-                                        showDialog = true
-                                    },
-                                    onDelete = {
-                                        selectedItem = item
-                                        showDeleteDialog = true
+                    when (currentScreen) {
+                        MainRoutes.HOME -> {
+                            if (!showWelcome) {
+                                LazyColumn {
+                                    items(inventory) { item ->
+                                        InventoryItemCard(
+                                            item = item,
+                                            selected = item == selectedItem,
+                                            onClick = {
+                                                selectedItem = if (selectedItem == item) null else item
+                                            },
+                                            onEdit = {
+                                                selectedItem = item
+                                                showDialog = true
+                                            },
+                                            onDelete = {
+                                                selectedItem = item
+                                                showDeleteDialog = true
+                                            }
+                                        )
                                     }
-                                )
+                                }
+                            } else {
+                                // pantalla de bienvenida (esto ya lo tienes)
                             }
                         }
+
+                        MainRoutes.COMPROBANTES -> {
+                            ComprobantesScreen()
+                        }
+                    }
                     }
                 }
             }
@@ -253,8 +289,6 @@ fun MainScreen(navController: NavHostController) {
             )
         }
     }
-}
-
 
 
 

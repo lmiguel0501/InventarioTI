@@ -16,7 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import com.luismiguel.inventarioti.ui.screen.login.LoginForm
 import com.luismiguel.inventarioti.ui.screen.main.MainScreen
 
-class MainActivity : ComponentActivity() {
+class  MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

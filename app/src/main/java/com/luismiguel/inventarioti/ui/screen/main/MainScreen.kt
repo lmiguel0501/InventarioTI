@@ -1,7 +1,12 @@
 package com.luismiguel.inventarioti.ui.screen.main
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,11 +21,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavHostController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -30,6 +41,8 @@ import com.luismiguel.inventarioti.ui.screen.comprobantes.ComprobantesScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.math.hypot
+import kotlin.math.max
 
 enum class MainRoutes {
     HOME, COMPROBANTES
@@ -54,7 +67,6 @@ fun MainScreen(
     val account = GoogleSignIn.getLastSignedInAccount(context)
     val displayName = account?.displayName ?: "Usuario"
     var showWelcome by remember { mutableStateOf(true) }
-    val menuOptions = listOf("Inicio")
 
     val googleSignInClient = GoogleSignIn.getClient(
         context, GoogleSignInOptions.DEFAULT_SIGN_IN
@@ -84,284 +96,352 @@ fun MainScreen(
         }
     }
 
-    ModalNavigationDrawer(
-        drawerState = drawerState, drawerContent = {
-            ModalDrawerSheet(
-                drawerContainerColor = Color.White
-            ) {
-                val buttonWidth = 250.dp
+    var rootSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+    var waveCenter by remember { mutableStateOf(Offset.Unspecified) }
+    val waveProgress = remember { Animatable(0f) }
+    val overlayAlpha = remember { Animatable(0f) }
+    var isWaving by remember { mutableStateOf(false) }
 
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Opciones", style = MaterialTheme.typography.titleLarge)
-                    Text(
-                        text = displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Card(
-                        modifier = Modifier
-                            .width(buttonWidth)
-                            .padding(vertical = 4.dp)
-                            .align(Alignment.CenterHorizontally),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(6.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        TextButton(
-                            onClick = {
-                                currentScreen = MainRoutes.HOME
-                                scope.launch { drawerState.close() }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color.Black,
-                                containerColor = Color.Transparent,
-                                disabledContentColor = Color.Gray
-                            )
-                        ) {
-                            Text("Inicio")
-                        }
-                    }
-                    Card(
-                        modifier = Modifier
-                            .width(buttonWidth)
-                            .padding(vertical = 4.dp)
-                            .align(Alignment.CenterHorizontally),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(6.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        TextButton(
-                            onClick = {
-                                currentScreen = MainRoutes.COMPROBANTES
-                                scope.launch { drawerState.close() }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color.Black,
-                                containerColor = Color.Transparent,
-                                disabledContentColor = Color.Gray
-                            )
-                        ) {
-                            Text("Comprobantes de entrega")
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .width(buttonWidth)
-                            .padding(vertical = 4.dp)
-                            .align(Alignment.CenterHorizontally),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(6.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        TextButton(
-                            onClick = onToggleDarkMode,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color.Black,
-                                containerColor = Color.Transparent,
-                                disabledContentColor = Color.Gray
-                            )
-                        ) {
-                            Text(
-                                if (isDarkMode) "Desactivar Modo Oscuro" else "Activar Modo Oscuro",
-                                color = Color.Black
-                            )
-                        }
-
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Card(
-                        modifier = Modifier
-                            .width(buttonWidth)
-                            .padding(vertical = 4.dp)
-                            .align(Alignment.CenterHorizontally),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(6.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        TextButton(
-                            onClick = {
-                                googleSignInClient.signOut().addOnCompleteListener {
-                                    FirebaseAuth.getInstance().signOut()
-                                    navController.navigate("login") {
-                                        popUpTo("login") { inclusive = true }
-                                    }
-                                }
-                                scope.launch { drawerState.close() }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color.Black,
-                                containerColor = Color.Transparent,
-                                disabledContentColor = Color.Gray
-                            )
-                        ) {
-                            Text("Cerrar Sesión", color = Color.Red)
-                        }
-                    }
-                }
-            }
-
-        }) {
-        Scaffold(containerColor = Color.White, topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = 56.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = when (currentScreen) {
-                                    MainRoutes.HOME -> "Soporte Técnico"
-                                    MainRoutes.COMPROBANTES -> "Comprobantes de Entrega"
-                                }
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .shadow(4.dp, RoundedCornerShape(12.dp))
-                                .background(Color.White, shape = RoundedCornerShape(12.dp))
-                        ) {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(
-                                    Icons.Default.Menu,
-                                    contentDescription = "Menú",
-                                    tint = Color.Black
-                                )
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
-                    modifier = Modifier.shadow(4.dp)
-                )
-                Divider(thickness = 1.dp, color = Color.Black.copy(alpha = 0.2f))
-            }
-        }, floatingActionButton = {
-            if (currentScreen == MainRoutes.HOME) {
-                Box(
-                    modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(16.dp))
-                        .background(Color.White, shape = RoundedCornerShape(16.dp))
+    // Contenedor raíz para dibujar la onda
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onSizeChanged { rootSize = it.toSize() }
+    ) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet(
+                    drawerContainerColor = MaterialTheme.colorScheme.surface
                 ) {
-                    IconButton(
-                        onClick = {
-                            selectedItem = null
-                            showDialog = true
-                        }, modifier = Modifier.size(56.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Agregar",
-                            tint = Color.Black
+                    val buttonWidth = 250.dp
+
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Opciones", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            text = displayName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
-                    }
-                }
-            }
-        }) { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                AnimatedVisibility(
-                    visible = showWelcome,
-                    enter = fadeIn(animationSpec = tween(500)),
-                    exit = fadeOut(animationSpec = tween(500))
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                    ) {
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Card(
                             modifier = Modifier
-                                .padding(16.dp)
-                                .shadow(12.dp, RoundedCornerShape(16.dp)),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                            border = BorderStroke(1.dp, Color(0x22000000))
+                                .width(buttonWidth)
+                                .padding(vertical = 4.dp)
+                                .align(Alignment.CenterHorizontally),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(6.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            TextButton(
+                                onClick = {
+                                    currentScreen = MainRoutes.HOME
+                                    scope.launch { drawerState.close() }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Inicio") }
+                        }
+                        Card(
+                            modifier = Modifier
+                                .width(buttonWidth)
+                                .padding(vertical = 4.dp)
+                                .align(Alignment.CenterHorizontally),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(6.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    currentScreen = MainRoutes.COMPROBANTES
+                                    scope.launch { drawerState.close() }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Comprobantes de entrega") }
+                        }
+
+                        Card(
+                            modifier = Modifier
+                                .width(buttonWidth)
+                                .padding(vertical = 4.dp)
+                                .align(Alignment.CenterHorizontally),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(6.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    val hasSize = rootSize.width > 0f && rootSize.height > 0f
+                                    val hasCenter = waveCenter.isSpecified
+                                    if (!hasSize || !hasCenter) {
+                                        onToggleDarkMode()
+                                        return@TextButton
+                                    }
+
+                                    isWaving = true
+                                    scope.launch {
+                                        waveProgress.snapTo(0.001f)
+                                        overlayAlpha.snapTo(1f)
+                                        waveProgress.animateTo(
+                                            targetValue = 1f,
+                                            animationSpec = tween(durationMillis = 900, easing = LinearEasing)
+                                        )
+                                        onToggleDarkMode()
+                                        overlayAlpha.animateTo(0f, tween(500, easing = LinearEasing))
+                                        isWaving = false
+                                        waveProgress.snapTo(0f)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onGloballyPositioned { coords ->
+                                        waveCenter = coords.boundsInRoot().center
+                                    },
                             ) {
                                 Text(
-                                    text = "¡Bienvenido al inventario!",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = Color.Black
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = displayName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.Gray
+                                    if (isDarkMode) "Desactivar Modo Oscuro" else "Activar Modo Oscuro"
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Card(
+                            modifier = Modifier
+                                .width(buttonWidth)
+                                .padding(vertical = 4.dp)
+                                .align(Alignment.CenterHorizontally),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(6.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    GoogleSignIn.getClient(
+                                        context, GoogleSignInOptions.DEFAULT_SIGN_IN
+                                    ).signOut().addOnCompleteListener {
+                                        FirebaseAuth.getInstance().signOut()
+                                        navController.navigate("login") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    }
+                                    scope.launch { drawerState.close() }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Cerrar Sesión", color = MaterialTheme.colorScheme.error) }
+                        }
                     }
                 }
-                when (currentScreen) {
-                    MainRoutes.HOME -> {
-                        if (!showWelcome) {
-                            LazyColumn {
-                                items(inventory) { item ->
-                                    InventoryItemCard(
-                                        item = item,
-                                        selected = item == selectedItem,
-                                        onClick = {
-                                            selectedItem =
-                                                if (selectedItem == item) null else item
-                                        },
-                                        onEdit = {
-                                            selectedItem = item
-                                            showDialog = true
-                                        },
-                                        onDelete = {
-                                            selectedItem = item
-                                            showDeleteDialog = true
-                                        },
-                                        onDeleteItem = {
-                                            inventory =
-                                                inventory.filter { it.serialNumber != it.serialNumber }
-                                        })
+            },
+            content = {
+                Scaffold(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    topBar = {
+                        Column {
+                            TopAppBar(
+                                title = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(end = 56.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = when (currentScreen) {
+                                                MainRoutes.HOME -> "Soporte Técnico"
+                                                MainRoutes.COMPROBANTES -> "Comprobantes de Entrega"
+                                            }
+                                        )
+                                    }
+                                },
+                                navigationIcon = {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 12.dp)
+                                            .shadow(4.dp, RoundedCornerShape(12.dp))
+                                            .background(
+                                                MaterialTheme.colorScheme.surface,
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                    ) {
+                                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                            Icon(
+                                                Icons.Default.Menu,
+                                                contentDescription = "Menú",
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                modifier = Modifier.shadow(4.dp)
+                            )
+                            Divider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    },
+                    floatingActionButton = {
+                        if (currentScreen == MainRoutes.HOME) {
+                            Box(
+                                modifier = Modifier
+                                    .shadow(8.dp, RoundedCornerShape(16.dp))
+                                    .background(
+                                        MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        selectedItem = null
+                                        showDialog = true
+                                    },
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = "Agregar",
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
                                 }
                             }
                         }
                     }
+                ) { padding ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(16.dp)
+                    ) {
+                        AnimatedVisibility(
+                            visible = showWelcome,
+                            enter = fadeIn(animationSpec = tween(500)),
+                            exit = fadeOut(animationSpec = tween(500))
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Card(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .shadow(12.dp, RoundedCornerShape(16.dp)),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "¡Bienvenido al inventario!",
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = displayName,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
 
-                    MainRoutes.COMPROBANTES -> {
-                        ComprobantesScreen()
+                        when (currentScreen) {
+                            MainRoutes.HOME -> {
+                                if (!showWelcome) {
+                                    LazyColumn {
+                                        items(inventory) { item ->
+                                            InventoryItemCard(
+                                                item = item,
+                                                selected = item == selectedItem,
+                                                onClick = {
+                                                    selectedItem =
+                                                        if (selectedItem == item) null else item
+                                                },
+                                                onEdit = {
+                                                    selectedItem = item
+                                                    showDialog = true
+                                                },
+                                                onDelete = {
+                                                    selectedItem = item
+                                                    showDeleteDialog = true
+                                                },
+                                                onDeleteItem = {
+                                                    inventory =
+                                                        inventory.filter { inv -> inv.serialNumber != it.serialNumber }
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            MainRoutes.COMPROBANTES -> {
+                                ComprobantesScreen()
+                            }
+                        }
                     }
                 }
+            }
+        )
+
+        if (isWaving) {
+            val maxR = remember(rootSize) {
+                hypot(rootSize.width.toDouble(), rootSize.height.toDouble()).toFloat()
+            }
+            val currentR = max(maxR * waveProgress.value, 1f)
+            val core = if (!isDarkMode) Color.Black else Color.White
+            val brush = Brush.radialGradient(
+                colors = listOf(
+                    core.copy(alpha = 0.75f),
+                    core.copy(alpha = 0.30f),
+                    core.copy(alpha = 0.08f),
+                    core.copy(alpha = 0.0f)
+                ),
+                center = if (waveCenter.isSpecified) waveCenter
+                else Offset(rootSize.width / 2f, rootSize.height / 2f),
+                radius = currentR
+            )
+
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
+            ) {
+                drawRect(brush = brush, alpha = overlayAlpha.value)
             }
         }
     }
 
     if (showDialog) {
-        AddItemDialog(item = selectedItem, onDismiss = { showDialog = false }, onSave = {
-            upsertItem(it)
-            showDialog = false
-        }, onDelete = {
-            it?.let {
-                inventory = inventory.filter { inv -> inv.serialNumber != it.serialNumber }
+        AddItemDialog(
+            item = selectedItem,
+            onDismiss = { showDialog = false },
+            onSave = {
+                upsertItem(it)
+                showDialog = false
+            },
+            onDelete = {
+                it?.let { toDelete ->
+                    inventory = inventory.filter { inv -> inv.serialNumber != toDelete.serialNumber }
+                }
+                showDialog = false
             }
-            showDialog = false
-        })
+        )
     }
 
     @Composable
@@ -375,8 +455,7 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = onDismiss,
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White,
-            title = { Text("Eliminar Cantidad", color = Color.Black) },
+            title = { Text("Eliminar Cantidad") },
             text = {
                 Column {
                     Text("Cantidad actual: ${selectedItem.quantity}")
@@ -387,24 +466,21 @@ fun MainScreen(
                             onValueChange(it.filter { c -> c.isDigit() }.toIntOrNull() ?: 0)
                         },
                         label = { Text("Cantidad a eliminar") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.White,
-                            focusedContainerColor = Color.White
-                        )
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
             confirmButton = {
                 TextButton(onClick = onConfirm) {
-                    Text("Aceptar", color = Color(0xFF6200EE))
+                    Text("Aceptar", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar", color = Color(0xFF6200EE))
+                    Text("Cancelar")
                 }
-            })
+            }
+        )
     }
     if (showDeleteDialog && selectedItem != null) {
         StyledDeleteQuantityDialog(
@@ -421,7 +497,8 @@ fun MainScreen(
             onDismiss = {
                 showDeleteDialog = false
                 quantityToDelete = 0
-            })
+            }
+        )
     }
 }
 
@@ -443,17 +520,16 @@ fun InventoryItemCard(
         AlertDialog(
             onDismissRequest = onDismiss,
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White,
-            title = { Text("Confirmar eliminación", color = Color.Black) },
+            title = { Text("Confirmar eliminación") },
             text = { Text("¿Estás seguro que deseas eliminar este artículo?") },
             confirmButton = {
                 TextButton(onClick = onConfirm) {
-                    Text("Sí", color = Color.Red)
+                    Text("Sí", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar", color = Color.Red)
+                    Text("Cancelar")
                 }
             })
     }
@@ -465,8 +541,9 @@ fun InventoryItemCard(
             .clickable { onClick() }
             .shadow(4.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0x22000000))) {
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = item.name, style = MaterialTheme.typography.headlineSmall)
             Text(
@@ -482,16 +559,14 @@ fun InventoryItemCard(
                         Text("Editar")
                     }
                     TextButton(
-                        onClick = onDelete,
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                        onClick = onDelete
                     ) {
-                        Text("Eliminar Cantidad")
+                        Text("Eliminar Cantidad", color = MaterialTheme.colorScheme.error)
                     }
                     TextButton(
-                        onClick = { showDialog = true },
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                        onClick = { showDialog = true }
                     ) {
-                        Text("Eliminar artículo")
+                        Text("Eliminar artículo", color = MaterialTheme.colorScheme.error)
                     }
                 }
                 if (showDialog) {
@@ -518,13 +593,7 @@ fun AddItemDialog(
     var serialNumber by remember { mutableStateOf(item?.serialNumber?.toString() ?: "") }
     var status by remember { mutableStateOf(item?.status ?: "") }
     var quantity by remember { mutableStateOf(item?.quantity?.toString() ?: "") }
-    var showDeleteConfirmation by remember { mutableStateOf(false) } // 👈 NUEVO estado
-
-    val textFieldModifier = Modifier
-        .fillMaxWidth()
-        .shadow(8.dp, shape = RoundedCornerShape(16.dp))
-        .clip(RoundedCornerShape(16.dp))
-        .background(Color.White)
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     if (showDeleteConfirmation) {
         AlertDialog(
@@ -536,13 +605,11 @@ fun AddItemDialog(
                     showDeleteConfirmation = false
                     onDelete?.invoke(item)
                 }) {
-                    Text("Sí", color = Color.Red)
+                    Text("Sí", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showDeleteConfirmation = false
-                }) {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
                     Text("No")
                 }
             })
@@ -550,13 +617,11 @@ fun AddItemDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
                 if (item == null) "Agregar Nuevo Artículo" else "Editar Artículo",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.Black
+                style = MaterialTheme.typography.titleLarge
             )
         },
         text = {
@@ -565,16 +630,7 @@ fun AddItemDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Nombre del Artículo") },
-                    modifier = textFieldModifier,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        disabledContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -582,16 +638,7 @@ fun AddItemDialog(
                     value = serialNumber,
                     onValueChange = { serialNumber = it },
                     label = { Text("Número de Serie") },
-                    modifier = textFieldModifier,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        disabledContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -599,16 +646,7 @@ fun AddItemDialog(
                     value = status,
                     onValueChange = { status = it },
                     label = { Text("Estado") },
-                    modifier = textFieldModifier,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        disabledContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -616,16 +654,7 @@ fun AddItemDialog(
                     value = quantity,
                     onValueChange = { quantity = it },
                     label = { Text("Cantidad") },
-                    modifier = textFieldModifier,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        disabledContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
@@ -650,11 +679,11 @@ fun AddItemDialog(
                     TextButton(onClick = {
                         showDeleteConfirmation = true
                     }) {
-                        Text("Eliminar", color = Color.Red)
+                        Text("Eliminar", color = MaterialTheme.colorScheme.error)
                     }
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar", color = Color.Black)
+                    Text("Cancelar")
                 }
             }
         })

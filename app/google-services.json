@@ -14,6 +14,30 @@
       },
       "oauth_client": [
         {
+          "client_id": "336410201232-7gsjoimadot4adla8ug9gcb93vc45g0t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luismiguel.inventarioti",
+            "certificate_hash": "7604f768e389daecbb035f4521caa4218fb1b01b"
+          }
+        },
+        {
+          "client_id": "336410201232-uifr8d0jfakqoaqahut4gtmttb0f5m6u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luismiguel.inventarioti",
+            "certificate_hash": "abb0e78816bd4703033dfd3a70e7e060665f9de3"
+          }
+        },
+        {
+          "client_id": "336410201232-vun1c48ridfmlqltgot89pfj7nunrq2r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.luismiguel.inventarioti",
+            "certificate_hash": "9ded624e26fd574b9cdadac07a9d4c96e7a69e99"
+          }
+        },
+        {
           "client_id": "336410201232-uidisklvaa7aukkvufg5g6m6hgkicbps.apps.googleusercontent.com",
           "client_type": 3
         }

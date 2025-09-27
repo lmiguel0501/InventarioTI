@@ -61,7 +61,8 @@ fun ComprobantesScreen() {
     var isSearching by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             if (success && tempImageUri != null && nombreComprobante.isNotBlank()) {
                 val savedUri = saveImageToInternalStorage(context, tempImageUri!!)
                 if (savedUri != null) {
@@ -119,8 +120,7 @@ fun ComprobantesScreen() {
                     TextButton(onClick = { uriParaVer = null }) {
                         Text("Cerrar", color = Color.Red)
                     }
-                }
-            )
+                })
         }
         Box(
             modifier = Modifier
@@ -136,9 +136,7 @@ fun ComprobantesScreen() {
                             nombreComprobante = ""
                         } else {
                             Toast.makeText(
-                                context,
-                                "Permiso de cámara denegado",
-                                Toast.LENGTH_SHORT
+                                context, "Permiso de cámara denegado", Toast.LENGTH_SHORT
                             ).show()
                         }
                     },
@@ -163,8 +161,7 @@ fun ComprobantesScreen() {
                     placeholder = { Text("Buscar comprobante...") },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
+                        focusedContainerColor = Color.White, unfocusedContainerColor = Color.White
                     )
                 )
             }
@@ -205,8 +202,7 @@ fun ComprobantesScreen() {
                         comprobantes = updated
                         selectedComprobante = null
                     },
-                    onView = { uriParaVer = it }
-                )
+                    onView = { uriParaVer = it })
             }
         }
     }
@@ -265,8 +261,7 @@ fun ComprobantesScreen() {
                 }) {
                     Text("Cancelar", color = Color.Red)
                 }
-            }
-        )
+            })
     }
     if (showOptionsBottomSheet && selectedComprobante != null) {
         ModalBottomSheet(onDismissRequest = { showOptionsBottomSheet = false }) {
@@ -275,15 +270,13 @@ fun ComprobantesScreen() {
                 modifier = Modifier.clickable {
                     showOptionsBottomSheet = false
                     showDialog = true
-                }
-            )
+                })
             ListItem(
                 headlineContent = { Text("Eliminar comprobante") },
                 modifier = Modifier.clickable {
                     showOptionsBottomSheet = false
                     showDeleteConfirm = true
-                }
-            )
+                })
         }
     }
     if (showDeleteConfirm && selectedComprobante != null) {
@@ -306,8 +299,7 @@ fun ComprobantesScreen() {
                 TextButton(onClick = { showDeleteConfirm = false }) {
                     Text("No")
                 }
-            }
-        )
+            })
     }
     if (showEditChoiceDialog && selectedComprobante != null) {
         AlertDialog(
@@ -341,8 +333,7 @@ fun ComprobantesScreen() {
                 TextButton(onClick = { showEditChoiceDialog = false }) {
                     Text("Cancelar", color = Color.Red)
                 }
-            }
-        )
+            })
     }
 }
 
@@ -359,16 +350,14 @@ fun ComprobanteCard(
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onClick() }
-            .shadow(4.dp, RoundedCornerShape(16.dp)),
+    Card(modifier = Modifier
+        .fillMaxWidth()
+        .padding(8.dp)
+        .clickable { onClick() }
+        .shadow(4.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0x22000000))
-    ) {
+        border = BorderStroke(1.dp, Color(0x22000000))) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
@@ -415,24 +404,18 @@ fun ComprobanteCard(
                                 val rotatedBitmap = rotateImageIfRequired(context, bitmap, uri)
                                 saveToGallery(context, rotatedBitmap, comprobante.nombre)
                                 Toast.makeText(
-                                    context,
-                                    "Imagen guardada en la galería",
-                                    Toast.LENGTH_SHORT
+                                    context, "Imagen guardada en la galería", Toast.LENGTH_SHORT
                                 ).show()
                             } else {
                                 Toast.makeText(
-                                    context,
-                                    "Error al cargar imagen",
-                                    Toast.LENGTH_SHORT
+                                    context, "Error al cargar imagen", Toast.LENGTH_SHORT
                                 ).show()
                             }
-                        }
-                    ) {
+                        }) {
                         Text("Descargar")
                     }
                     TextButton(
-                        onClick = { onView(uri) }
-                    ) {
+                        onClick = { onView(uri) }) {
                         Text("Ver")
                     }
                 }
@@ -455,8 +438,7 @@ fun ComprobanteCard(
                             TextButton(onClick = { showDialog = false }) {
                                 Text("Cancelar", color = Color.Red)
                             }
-                        }
-                    )
+                        })
                 }
             }
         }

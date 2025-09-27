@@ -1,5 +1,6 @@
 package com.luismiguel.inventarioti.ui.screen.login
 
+import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,11 +50,13 @@ fun LoginForm(navController: NavHostController) {
                     .show()
             }
         }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
     ) {
+        // Imagen superior
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,95 +83,123 @@ fun LoginForm(navController: NavHostController) {
                     )
             )
         }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp),
             contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .shadow(12.dp, RoundedCornerShape(16.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Card(
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color(0x22000000)) // borde gris semitransparente
+                        .shadow(12.dp, RoundedCornerShape(16.dp))
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color(0x22000000))
                     ) {
-                        Text(
-                            text = "¡Bienvenido al inventario de soporte técnico!",
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Por favor, inicia sesión con tu cuenta de Google.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedButton(
-                            onClick = {
-                                val signInIntent = signInClient.signInIntent
-                                signInLauncher.launch(signInIntent)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(40.dp),
-                            shape = RoundedCornerShape(50),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = Color.Black
-                            ),
-                            border = BorderStroke(1.dp, Color.Gray)
-                        )
-                        {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_google),
-                                contentDescription = "Google Icon",
-                                modifier = Modifier.size(24.dp)
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "¡Bienvenido al inventario de soporte técnico!",
+                                style = MaterialTheme.typography.headlineSmall,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Continuar con Google", color = Color.Black)
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Por favor, inicia sesión con tu cuenta de Google.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            OutlinedButton(
+                                onClick = {
+                                    val signInIntent = signInClient.signInIntent
+                                    signInLauncher.launch(signInIntent)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp),
+                                shape = RoundedCornerShape(50),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Color.White,
+                                    contentColor = Color.Black
+                                ),
+                                border = BorderStroke(1.dp, Color.Gray)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_google),
+                                    contentDescription = "Google Icon",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Continuar con Google", color = Color.Black)
+                            }
                         }
                     }
                 }
+
+                // espacio para el boton de invitado
+                Spacer(modifier = Modifier.height(18.dp))
+                TextButton(
+                    onClick = {
+                        val prefs =
+                            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                        prefs.edit().putBoolean("is_guest", true).apply()
+
+                        Toast.makeText(context, "Ingresando como invitado", Toast.LENGTH_SHORT)
+                            .show()
+                        navController.navigate("main") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Text(
+                        text = "Iniciar sesión como invitado",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Gray
+                    )
+                }
             }
-        }
-
-
-        @Composable
-        fun CustomTextField(
-            value: String,
-            onValueChange: (String) -> Unit,
-            label: String,
-            isError: Boolean = false,
-            visualTransformation: VisualTransformation = VisualTransformation.None
-        ) {
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                label = { Text(label) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium),
-                isError = isError,
-                visualTransformation = visualTransformation
-            )
         }
     }
 }
 
+@Composable
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isError: Boolean = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium),
+        isError = isError,
+        visualTransformation = visualTransformation
+    )
+}

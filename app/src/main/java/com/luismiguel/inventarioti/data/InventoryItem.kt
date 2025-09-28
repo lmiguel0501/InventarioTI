@@ -16,5 +16,3 @@ data class Comprobante(
     val fecha: String,
     val hora: String
 )
-
-

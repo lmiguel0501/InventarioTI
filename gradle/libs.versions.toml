@@ -1,11 +1,9 @@
 [versions]
-accompanistPermissions = "0.34.0"
 accompanistPermissionsVersion = "0.34.0-alpha"
-agp = "8.9.1"
+agp = "8.11.2"
 composeBomVersion = "2025.05.00"
 credentialsPlayServicesAuth = "1.5.0"
 firebaseBom = "33.12.0"
-firebaseBomVersion = "32.0.0"
 kotlin = "2.1.0"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -18,14 +16,14 @@ materialIconsExtended = "1.7.8"
 navigationCompose = "2.8.9"
 appcompat = "1.7.0"
 playServicesAuth = "21.3.0"
+roomCompiler = "2.5.0"
+roomCompilerVersion = "2.7.2"
 roomRxjava3 = "2.7.0"
-firebaseStorageKtx = "21.0.1"
-accompanist = "0.34.0"
 crashlytics = "3.0.3"
 google-service = "4.4.2"
+roomTesting = "2.7.2"
 
 [libraries]
-accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 accompanist-permissions-v0340alpha = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissionsVersion" }
 androidx-compose-bom-v20250500 = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,24 +31,21 @@ androidx-credentials = { module = "androidx.credentials:credentials", version.re
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "materialIconsExtended" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRxjava3" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompilerVersion" }
+androidx-room-compiler-v250 = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-guava = { module = "androidx.room:room-guava", version.ref = "roomRxjava3" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRxjava3" }
 androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "roomRxjava3" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRxjava3" }
 androidx-room-rxjava2 = { module = "androidx.room:room-rxjava2", version.ref = "roomRxjava3" }
 androidx-room-rxjava3 = { module = "androidx.room:room-rxjava3", version.ref = "roomRxjava3" }
-androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomRxjava3" }
+androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomTesting" }
 
 firebase-analytics-ktx = { module = "com.google.firebase:firebase-analytics-ktx" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
-firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-bom-v3200 = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBomVersion" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
-google-firebase-storage-ktx = { module = "com.google.firebase:firebase-storage-ktx" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version = "1.1.1" }
-firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
 firebase-crashlytics = {module = "com.google.firebase:firebase-crashlytics"}
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }

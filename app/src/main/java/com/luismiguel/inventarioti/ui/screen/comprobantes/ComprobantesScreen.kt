@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -95,123 +94,124 @@ fun ComprobantesScreen() {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        if (uriParaVer != null) {
-            AlertDialog(
-                onDismissRequest = { uriParaVer = null },
-                shape = RoundedCornerShape(24.dp),
-                containerColor = Color.White,
-                title = { Text("Vista previa", color = Color.Black) },
-                text = {
-                    Image(
-                        painter = rememberAsyncImagePainter(uriParaVer),
-                        contentDescription = "Vista previa",
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (uriParaVer != null) {
+                AlertDialog(
+                    onDismissRequest = { uriParaVer = null },
+                    shape = RoundedCornerShape(24.dp),
+                    title = { Text("Vista previa", color = MaterialTheme.colorScheme.onSurface) },
+                    text = {
+                        Image(
+                            painter = rememberAsyncImagePainter(uriParaVer),
+                            contentDescription = "Vista previa",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { uriParaVer = null }) {
+                            Text("Cerrar", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                if (!isSearching) {
+                    Button(
+                        onClick = {
+                            if (cameraPermissionState.status.isGranted) {
+                                showDialog = true
+                                estaEditando = false
+                                nombreComprobante = ""
+                            } else {
+                                Toast.makeText(
+                                    context, "Permiso de cámara denegado", Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.align(Alignment.Center)
+                    ) {
+                        Text("Tomar la imagen")
+                    }
+                } else {
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(8.dp)
+                            .padding(end = 48.dp),
+                        placeholder = { Text("Buscar comprobante...") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors()
                     )
-                },
-                confirmButton = {
-                    TextButton(onClick = { uriParaVer = null }) {
-                        Text("Cerrar", color = Color.Red)
-                    }
-                })
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            if (!isSearching) {
-                Button(
-                    onClick = {
-                        if (cameraPermissionState.status.isGranted) {
-                            showDialog = true
-                            estaEditando = false
-                            nombreComprobante = ""
-                        } else {
-                            Toast.makeText(
-                                context, "Permiso de cámara denegado", Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = MaterialTheme.colorScheme.primary
-                    ),
-                    border = BorderStroke(1.dp, Color(0x22000000)),
-                    modifier = Modifier.align(Alignment.Center)
-                ) {
-                    Text("Tomar la imagen", color = Color.Black)
                 }
-            } else {
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 48.dp),
-                    placeholder = { Text("Buscar comprobante...") },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White, unfocusedContainerColor = Color.White
+                IconButton(
+                    onClick = { isSearching = !isSearching },
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    Icon(
+                        imageVector = if (isSearching) Icons.Default.Close else Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
-                )
+                }
             }
-            IconButton(
-                onClick = { isSearching = !isSearching },
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
-                Icon(
-                    imageVector = if (isSearching) Icons.Default.Close else Icons.Default.Search,
-                    contentDescription = "Buscar"
-                )
-            }
-        }
 
-        val filteredComprobantes =
-            if (searchQuery.isBlank()) comprobantes else comprobantes.filter {
-                it.nombre.contains(searchQuery, ignoreCase = true)
-            }
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            items(filteredComprobantes) { comp ->
-                ComprobanteCard(
-                    comprobante = comp,
-                    selected = comp == selectedComprobante,
-                    onClick = {
-                        selectedComprobante = if (selectedComprobante == comp) null else comp
-                    },
-                    onEdit = {
-                        selectedComprobante = comp
-                        showEditChoiceDialog = true
-                    },
-                    onDelete = {
-                        val updated = comprobantes.toMutableList().apply { remove(comp) }
-                        saveComprobantesList(context, updated)
-                        comprobantes = updated
-                        selectedComprobante = null
-                    },
-                    onView = { uriParaVer = it })
+            val filteredComprobantes =
+                if (searchQuery.isBlank()) comprobantes else comprobantes.filter {
+                    it.nombre.contains(searchQuery, ignoreCase = true)
+                }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                items(filteredComprobantes) { comp ->
+                    ComprobanteCard(
+                        comprobante = comp,
+                        selected = comp == selectedComprobante,
+                        onClick = {
+                            selectedComprobante = if (selectedComprobante == comp) null else comp
+                        },
+                        onEdit = {
+                            selectedComprobante = comp
+                            showEditChoiceDialog = true
+                        },
+                        onDelete = {
+                            val updated = comprobantes.toMutableList().apply { remove(comp) }
+                            saveComprobantesList(context, updated)
+                            comprobantes = updated
+                            selectedComprobante = null
+                        },
+                        onView = { uriParaVer = it }
+                    )
+                }
             }
         }
     }
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White,
-            title = { Text("Nombre del comprobante", color = Color.Black) },
+            title = { Text("Nombre del comprobante", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 TextField(
                     value = nombreComprobante,
@@ -219,10 +219,7 @@ fun ComprobantesScreen() {
                     placeholder = { Text("Escribe el nombre") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    )
+                    colors = TextFieldDefaults.colors()
                 )
             },
             confirmButton = {
@@ -250,7 +247,7 @@ fun ComprobantesScreen() {
                         launcher.launch(uri)
                     }
                 }) {
-                    Text("Aceptar", color = Color.Red)
+                    Text("Aceptar", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -259,9 +256,10 @@ fun ComprobantesScreen() {
                     selectedComprobante = null
                     estaEditando = false
                 }) {
-                    Text("Cancelar", color = Color.Red)
+                    Text("Cancelar")
                 }
-            })
+            }
+        )
     }
     if (showOptionsBottomSheet && selectedComprobante != null) {
         ModalBottomSheet(onDismissRequest = { showOptionsBottomSheet = false }) {
@@ -270,19 +268,21 @@ fun ComprobantesScreen() {
                 modifier = Modifier.clickable {
                     showOptionsBottomSheet = false
                     showDialog = true
-                })
+                }
+            )
             ListItem(
                 headlineContent = { Text("Eliminar comprobante") },
                 modifier = Modifier.clickable {
                     showOptionsBottomSheet = false
                     showDeleteConfirm = true
-                })
+                }
+            )
         }
     }
     if (showDeleteConfirm && selectedComprobante != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("¿Estás seguro que deseas eliminar?") },
+            title = { Text("¿Estás seguro que deseas eliminar?", color = MaterialTheme.colorScheme.onSurface) },
             confirmButton = {
                 TextButton(onClick = {
                     val list = loadComprobantes(context).toMutableList()
@@ -299,14 +299,14 @@ fun ComprobantesScreen() {
                 TextButton(onClick = { showDeleteConfirm = false }) {
                     Text("No")
                 }
-            })
+            }
+        )
     }
     if (showEditChoiceDialog && selectedComprobante != null) {
         AlertDialog(
             onDismissRequest = { showEditChoiceDialog = false },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White,
-            title = { Text("¿Qué deseas modificar?", color = Color.Black) },
+            title = { Text("¿Qué deseas modificar?", color = MaterialTheme.colorScheme.onSurface) },
             confirmButton = {
                 Column {
                     TextButton(onClick = {
@@ -315,7 +315,7 @@ fun ComprobantesScreen() {
                         showDialog = true
                         showEditChoiceDialog = false
                     }) {
-                        Text("Modificar nombre", color = Color.Black)
+                        Text("Modificar nombre")
                     }
                     TextButton(onClick = {
                         nombreComprobante = selectedComprobante!!.nombre
@@ -325,15 +325,16 @@ fun ComprobantesScreen() {
                         showEditChoiceDialog = false
                         launcher.launch(uri)
                     }) {
-                        Text("Modificar foto", color = Color.Black)
+                        Text("Modificar foto")
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditChoiceDialog = false }) {
-                    Text("Cancelar", color = Color.Red)
+                    Text("Cancelar")
                 }
-            })
+            }
+        )
     }
 }
 
@@ -350,14 +351,16 @@ fun ComprobanteCard(
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp)
-        .clickable { onClick() }
-        .shadow(4.dp, RoundedCornerShape(16.dp)),
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onClick() }
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0x22000000))) {
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(
@@ -393,7 +396,7 @@ fun ComprobanteCard(
                     }
                     TextButton(
                         onClick = { showDialog = true },
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
                         Text("Eliminar")
                     }
@@ -411,11 +414,13 @@ fun ComprobanteCard(
                                     context, "Error al cargar imagen", Toast.LENGTH_SHORT
                                 ).show()
                             }
-                        }) {
+                        }
+                    ) {
                         Text("Descargar")
                     }
                     TextButton(
-                        onClick = { onView(uri) }) {
+                        onClick = { onView(uri) }
+                    ) {
                         Text("Ver")
                     }
                 }
@@ -423,22 +428,22 @@ fun ComprobanteCard(
                     AlertDialog(
                         onDismissRequest = { showDialog = false },
                         shape = RoundedCornerShape(24.dp),
-                        containerColor = Color.White,
-                        title = { Text("Confirmar eliminación", color = Color.Black) },
+                        title = { Text("Confirmar eliminación", color = MaterialTheme.colorScheme.onSurface) },
                         text = { Text("¿Estás seguro que deseas eliminar este comprobante?") },
                         confirmButton = {
                             TextButton(onClick = {
                                 showDialog = false
                                 onDelete()
                             }) {
-                                Text("Sí", color = Color.Red)
+                                Text("Sí", color = MaterialTheme.colorScheme.error)
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = { showDialog = false }) {
-                                Text("Cancelar", color = Color.Red)
+                                Text("Cancelar")
                             }
-                        })
+                        }
+                    )
                 }
             }
         }
@@ -464,7 +469,7 @@ fun saveImageToInternalStorage(context: Context, uri: Uri): Uri? {
         Uri.fromFile(file)
     } catch (e: Exception) {
         e.printStackTrace()
-        null
+        return null
     }
 }
 
@@ -522,7 +527,7 @@ fun bitmapFromUri(context: Context, uri: Uri): Bitmap? {
         BitmapFactory.decodeStream(inputStream)
     } catch (e: Exception) {
         e.printStackTrace()
-        null
+        return null
     }
 }
 
